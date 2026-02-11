@@ -24,6 +24,7 @@ export const TherapyScreen = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioQueueRef = useRef<Array<ArrayBuffer>>([]);
   const isPlayingRef = useRef(false);
+  const incomingAudioChunksRef = useRef<Array<ArrayBuffer>>([]);
 
   // 3. Speech Logic (The Ears)
   const recognitionRef = useRef<any>(null);
@@ -128,8 +129,22 @@ export const TherapyScreen = () => {
             setIsAiSpeaking(true);
             recognitionRef.current?.stop();
           } else if (message.type === "audio_end") {
-            // Backend has finished sending audio bytes – actual unlock
-            // happens when the queue is fully drained in playNextInQueue.
+            // Backend has finished sending audio bytes for this turn.
+            // Combine all incoming chunks into a single buffer and enqueue it.
+            if (incomingAudioChunksRef.current.length > 0) {
+              const totalLength = incomingAudioChunksRef.current.reduce(
+                (sum, chunk) => sum + chunk.byteLength,
+                0
+              );
+              const combined = new Uint8Array(totalLength);
+              let offset = 0;
+              for (const chunk of incomingAudioChunksRef.current) {
+                combined.set(new Uint8Array(chunk), offset);
+                offset += chunk.byteLength;
+              }
+              incomingAudioChunksRef.current = [];
+              enqueueAudioChunk(combined.buffer);
+            }
           } else if (message.type === "subtitles") {
             const text = message.text || "";
             setSubtitleText(text);
@@ -141,12 +156,12 @@ export const TherapyScreen = () => {
           console.error("Failed to parse WebSocket message:", err);
         }
       } else if (data instanceof ArrayBuffer) {
-        // Raw audio bytes from ElevenLabs
-        enqueueAudioChunk(data);
+        // Raw audio bytes from ElevenLabs – collect them for this turn
+        incomingAudioChunksRef.current.push(data);
       } else if (data instanceof Blob) {
-        // Convert Blob to ArrayBuffer
+        // Convert Blob to ArrayBuffer and collect
         const arrayBuffer = await data.arrayBuffer();
-        enqueueAudioChunk(arrayBuffer);
+        incomingAudioChunksRef.current.push(arrayBuffer);
       }
     },
   });
