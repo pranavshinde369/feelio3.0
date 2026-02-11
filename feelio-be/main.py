@@ -211,19 +211,28 @@ class FeelioTherapist:
         Generate AI response using fusion logic with Human Persona.
         """
         try:
-            # We inject the visual context explicitly into the prompt
-            # This ensures the 'Friendly Therapist' persona sees the user.
-            fusion_prompt = f"""
-            [SCENE DATA]
-            User's Face: {current_emotion.upper()}
-            User's Words: "{user_text}"
-            
-            [INSTRUCTION]
-            Reply to the user as Dr. Libra (Friendly Therapist).
-            1. React to their face if it's relevant (especially if it contradicts their words).
-            2. Validate their feeling warmly.
-            3. Keep it short (2-3 sentences max) and conversational.
-            """
+            # Update rolling emotion history for richer context
+            update_emotion_history(current_emotion, self.emotion_history)
+            trajectory = summarize_trajectory(self.emotion_history)
+            contradiction = detect_contradiction(user_text, current_emotion)
+            playbook = select_playbook(current_emotion, user_text)
+            word_count = extract_word_count(user_text)
+            pace_hint = determine_pace_hint(word_count)
+
+            # Build a structured fusion prompt that combines:
+            # - words
+            # - face emotion
+            # - recent trajectory
+            # - any contradiction between words and face
+            # - a small suggested coping playbook
+            fusion_prompt = build_fusion_prompt(
+                user_text=user_text,
+                emotion=current_emotion,
+                trajectory=trajectory,
+                contradiction=contradiction,
+                playbook=playbook,
+                pace_hint=pace_hint,
+            )
 
             response = self.chat_session.send_message(fusion_prompt)
             ai_text = response.text.replace("*", "").strip()
