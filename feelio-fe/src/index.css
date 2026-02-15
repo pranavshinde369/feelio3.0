@@ -1,0 +1,268 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Feelio Design System - "Safe Space" Aesthetic
+   All colors in HSL for theming consistency
+*/
+
+@layer base {
+  :root {
+    /* Light mode - softer version */
+    --background: 220 30% 96%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 172 66% 50%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 263 70% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 20% 90%;
+    --muted-foreground: 220 15% 40%;
+
+    --accent: 263 50% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 85%;
+    --input: 220 20% 85%;
+    --ring: 172 66% 50%;
+
+    --radius: 1rem;
+
+    /* Feelio Custom Colors */
+    --feelio-midnight: 222 47% 11%;
+    --feelio-deep-blue: 210 50% 20%;
+    --feelio-teal: 172 66% 50%;
+    --feelio-teal-glow: 172 80% 60%;
+    --feelio-purple: 263 70% 50%;
+    --feelio-purple-soft: 263 50% 70%;
+    --feelio-warm: 280 60% 45%;
+    
+    /* Emotion Colors */
+    --emotion-happy: 45 100% 50%;
+    --emotion-sad: 210 80% 50%;
+    --emotion-calm: 172 66% 50%;
+    --emotion-anxious: 30 90% 55%;
+    --emotion-neutral: 220 15% 50%;
+
+    /* Glassmorphism */
+    --glass-bg: 220 30% 95% / 0.7;
+    --glass-border: 220 20% 90% / 0.5;
+
+    --sidebar-background: 220 30% 94%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 172 66% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 263 50% 95%;
+    --sidebar-accent-foreground: 263 70% 50%;
+    --sidebar-border: 220 20% 85%;
+    --sidebar-ring: 172 66% 50%;
+  }
+
+  .dark {
+    /* Dark mode - "Safe Space" default */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 40% 10%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 40% 10%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 172 66% 50%;
+    --primary-foreground: 222 47% 6%;
+
+    --secondary: 263 70% 60%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 222 30% 15%;
+    --muted-foreground: 220 15% 60%;
+
+    --accent: 263 60% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 172 66% 50%;
+
+    /* Feelio Custom Colors - Dark */
+    --feelio-midnight: 222 47% 6%;
+    --feelio-deep-blue: 210 50% 15%;
+    --feelio-teal: 172 66% 50%;
+    --feelio-teal-glow: 172 80% 60%;
+    --feelio-purple: 263 70% 60%;
+    --feelio-purple-soft: 263 50% 50%;
+    --feelio-warm: 280 60% 55%;
+
+    /* Glassmorphism - Dark */
+    --glass-bg: 222 40% 12% / 0.8;
+    --glass-border: 222 30% 25% / 0.5;
+
+    --sidebar-background: 222 40% 8%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 172 66% 50%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 263 50% 20%;
+    --sidebar-accent-foreground: 263 70% 70%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 172 66% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism effect */
+  .glass {
+    @apply backdrop-blur-xl border;
+    background: hsl(var(--glass-bg));
+    border-color: hsl(var(--glass-border));
+  }
+
+  /* Glow effects */
+  .glow-teal {
+    box-shadow: 0 0 40px hsl(var(--feelio-teal) / 0.3),
+                0 0 80px hsl(var(--feelio-teal) / 0.15);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 40px hsl(var(--feelio-purple) / 0.3),
+                0 0 80px hsl(var(--feelio-purple) / 0.15);
+  }
+
+  /* Pulse animation for avatar */
+  .pulse-speaking {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(var(--feelio-teal) / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(var(--feelio-teal) / 0.5),
+                  0 0 60px hsl(var(--feelio-teal) / 0.3);
+    }
+  }
+
+  /* Wave animation for thinking state */
+  .wave-thinking {
+    animation: wave 1.5s ease-in-out infinite;
+  }
+
+  @keyframes wave {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--feelio-teal)), hsl(var(--feelio-purple)));
+  }
+
+  /* Animated background */
+  .animated-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--feelio-midnight)),
+      hsl(var(--feelio-deep-blue)),
+      hsl(var(--feelio-purple-soft) / 0.3)
+    );
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  /* Particle float animation */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) translateX(0);
+    }
+    33% {
+      transform: translateY(-10px) translateX(5px);
+    }
+    66% {
+      transform: translateY(5px) translateX(-5px);
+    }
+  }
+
+  /* Emotion badge colors */
+  .emotion-happy {
+    background: hsl(var(--emotion-happy) / 0.2);
+    border-color: hsl(var(--emotion-happy) / 0.5);
+    color: hsl(var(--emotion-happy));
+  }
+
+  .emotion-sad {
+    background: hsl(var(--emotion-sad) / 0.2);
+    border-color: hsl(var(--emotion-sad) / 0.5);
+    color: hsl(var(--emotion-sad));
+  }
+
+  .emotion-calm {
+    background: hsl(var(--emotion-calm) / 0.2);
+    border-color: hsl(var(--emotion-calm) / 0.5);
+    color: hsl(var(--emotion-calm));
+  }
+
+  .emotion-anxious {
+    background: hsl(var(--emotion-anxious) / 0.2);
+    border-color: hsl(var(--emotion-anxious) / 0.5);
+    color: hsl(var(--emotion-anxious));
+  }
+
+  .emotion-neutral {
+    background: hsl(var(--emotion-neutral) / 0.2);
+    border-color: hsl(var(--emotion-neutral) / 0.5);
+    color: hsl(var(--emotion-neutral));
+  }
+}
