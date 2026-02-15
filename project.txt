@@ -1,0 +1,57 @@
+Real-Time, Emotion-Aware AI Therapy Assistant
+Feelio is a production-grade, low-latency conversational AI application designed to provide a safe, non-judgmental space for mental health support. It simulates a natural, face-to-face therapy session by combining real-time voice interaction with client-side facial emotion recognition.
+
+Rather than relying on generic LLM responses, Feelio is grounded in clinical frameworks (like CBT and DBT) using Retrieval-Augmented Generation (RAG) and features a strict, deterministic safety guardrail to handle crisis situations.
+
+1. Core Features & User Experience
+"Walkie-Talkie" Turn-Taking: To foster a calm and reflective environment, the system enforces a strict turn-based communication flow. When the AI speaks, the user's microphone is locked, preventing chaotic interruptions and mimicking a respectful therapeutic dialogue.
+
+Privacy-First Emotion Detection: The application literally "reads the room." It detects user emotions (Happy, Sad, Anxious, Neutral) in real-time. Crucially, video feeds are never sent to the server. Facial landmarker processing happens entirely in the browser, ensuring absolute user privacy.
+
+Ultra-Low Latency Voice: By streaming generated text tokens directly into the ElevenLabs audio generation API, Feelio responds with high-quality, human-like voice audio with minimal delay.
+
+Dynamic UI/UX: The "Calm Space" interface features a soothing dark mode, dynamic subtitles, real-time emotion tagging, and intuitive visual cues (e.g., pulsing mic for listening, locked icon when the AI is speaking).
+
+2. Technical Architecture
+Feelio operates on a decoupled, asynchronous architecture optimized for speed and parallel processing.
+
+Frontend (The "Eyes and Ears")
+Framework: React (using Vite) with Tailwind CSS and Framer Motion for fluid animations.
+
+Vision Engine: MediaPipe Tasks Vision runs locally in the browser to track 52 facial blendshapes, mapping micro-expressions (like a furrowed brow or smile) to specific emotional states.
+
+Audio Capture: Native Browser SpeechRecognition captures user audio and transcribes it to text.
+
+State Management: Custom React hooks (useMediaPipe, useWebSocket) manage the complex real-time states between the camera, microphone, and server.
+
+Backend (The "Brain and Shield")
+Framework: FastAPI (Python) running a persistent WebSocket server (uvicorn) for bidirectional streaming.
+
+The LLM Brain: Google Gemini (gemini-1.5-flash) acts as the core reasoning engine, chosen specifically for its incredibly fast time-to-first-token.
+
+Voice Synthesis: ElevenLabs SDK is used to generate calm, empathetic audio (e.g., the 'Rachel' voice), streaming binary audio chunks (MP3) directly over the WebSocket.
+
+The Memory (RAG): A local ChromaDB vector store is loaded with therapeutic techniques (e.g., grounding exercises, behavioral activation). When a user speaks, the system retrieves relevant techniques to guide the AI's response.
+
+3. The "Zero-Latency" Safety Guardrail
+The most critical component of Feelio is its deterministic safety layer.
+Before user input ever reaches the AI model, it passes through a regex-based keyword classifier designed to catch high-risk phrases (e.g., self-harm or suicide ideation).
+
+If a crisis is detected:
+
+The standard LLM pipeline is immediately aborted.
+
+A hardcoded, clinically safe crisis response is triggered.
+
+The frontend alerts the user and can instantly display emergency hotline numbers.
+
+4. How the Real-Time Loop Works
+Listen: The user speaks into the frontend. MediaPipe simultaneously tags the user's visual emotion (e.g., Confidence: 85% Anxious).
+
+Transmit: Upon silence, the frontend sends a JSON payload containing the transcribed text and the emotion tag to the FastAPI backend via WebSocket.
+
+Process & Retrieve: The backend clears the safety check, queries the ChromaDB for relevant CBT advice, and constructs a strict System Prompt for Gemini (e.g., "User is anxious. Apply 5-4-3-2-1 grounding").
+
+Stream: Gemini begins streaming text tokens. As the text generates, it is piped into ElevenLabs.
+
+Playback: Binary audio chunks arrive at the React frontend and are queued and played seamlessly using the Web AudioContext API, while the transcribed text appears on screen.
