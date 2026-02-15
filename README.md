@@ -1,0 +1,150 @@
+# Feelio ? Real-Time, Emotion-Aware AI Therapy Assistant
+
+Feelio is a production-grade, low-latency conversational AI application designed to provide a safe, non-judgmental space for mental health support. It simulates a natural, face-to-face therapy session by combining **real-time voice interaction** with **client-side facial emotion recognition**.
+
+Rather than relying on generic LLM responses, Feelio is grounded in clinical frameworks (like CBT and DBT) using **Retrieval-Augmented Generation (RAG)** and features a **strict, deterministic safety guardrail** to handle crisis situations.
+
+---
+
+## 1. Core Features & User Experience
+
+### Walkie-Talkie Turn-Taking
+
+To foster a calm and reflective environment, the system enforces a **strict turn-based communication flow**. When the AI speaks, the user's microphone is locked, preventing chaotic interruptions and mimicking a respectful therapeutic dialogue.
+
+### Privacy-First Emotion Detection
+
+The application literally "reads the room." It detects user emotions (**Happy, Sad, Anxious, Neutral**, and related states) in real time. Crucially, **video feeds are never sent to the server** in the client-side vision design: facial landmark processing can run entirely in the browser (e.g. via MediaPipe Tasks Vision), ensuring absolute user privacy. The current backend also supports a hybrid mode where the frontend sends frame snapshots to the server for emotion analysis via MediaPipe Face Mesh.
+
+### Ultra-Low Latency Voice
+
+By streaming generated text tokens directly into a high-quality TTS API (e.g. **ElevenLabs**), Feelio can respond with human-like voice audio with minimal delay. The current release uses the browser?s built-in **Speech Synthesis API** with configurable voices and emotion-based rate/pitch; the architecture is ready for plug-in of ElevenLabs or similar streaming TTS.
+
+### Dynamic UI/UX
+
+The **"Calm Space"** interface features:
+
+- Soothing dark mode
+- Dynamic subtitles (AI response text in real time)
+- Real-time emotion tagging (e.g. current mood badge)
+- Intuitive visual cues: pulsing mic when listening, locked/listening states when the AI is speaking
+- Optional **AI Therapist** vs **Human Therapist** mode toggle, with a path to browse and book real therapists
+
+---
+
+## 2. Technical Architecture
+
+Feelio operates on a **decoupled, asynchronous architecture** optimized for speed and parallel processing.
+
+### Frontend (The "Eyes and Ears")
+
+| Layer | Technology |
+|-------|------------|
+| **Framework** | React (Vite) with TypeScript |
+| **Styling** | Tailwind CSS, shadcn/ui, Framer Motion?ready |
+| **Vision** | MediaPipe (Face Mesh / Tasks Vision): 52+ facial landmarks/blendshapes mapped to emotional states (e.g. furrowed brow, smile). Backend vision pipeline uses OpenCV + MediaPipe for geometry-based emotion from frame snapshots. |
+| **Audio capture** | Native Browser **SpeechRecognition** for user speech ? text |
+| **Audio playback** | Browser **Speech Synthesis API** (configurable voice, emotion-based rate/pitch); design supports swap to **Web AudioContext** + streamed binary (e.g. ElevenLabs MP3 over WebSocket) |
+| **State** | Custom React hooks and local state for camera, microphone, and server sync; **useWebSocket**-ready for future bidirectional streaming |
+
+### Backend (The "Brain and Shield")
+
+| Layer | Technology |
+|-------|------------|
+| **Framework** | **FastAPI** (Python), Uvicorn |
+| **LLM** | **Google Gemini** (`gemini-1.5-flash`) as the core reasoning engine for fast time-to-first-token |
+| **Voice synthesis** | Browser TTS today; architecture supports **ElevenLabs SDK** (e.g. "Rachel" voice) streaming MP3 over WebSocket |
+| **RAG / Memory** | Design supports a local **ChromaDB** vector store for therapeutic techniques (grounding, behavioral activation, etc.). Current prompts use structured fusion (emotion, trajectory, playbooks) to guide Gemini. |
+| **Safety** | Deterministic, regex-based crisis detection before user input reaches the LLM (see below) |
+
+### Repository Layout
+
+```
+FeelioV3/
+??? feelio-fe/          # React (Vite) frontend ? "Calm Space" UI, session, healing music, therapists
+??? feelio-be/          # FastAPI backend ? vision, chat, therapy logic, safety
+??? README.md           # This file
+??? SECURITY.md
+```
+
+---
+
+## 3. The "Zero-Latency" Safety Guardrail
+
+The most critical component of Feelio is its **deterministic safety layer**.
+
+Before user input ever reaches the AI model, it passes through a **keyword-based classifier** (e.g. regex/phrase list) designed to catch high-risk phrases (self-harm, suicide ideation).
+
+**If a crisis is detected:**
+
+1. The standard LLM pipeline is **immediately aborted**.
+2. A **hardcoded, clinically safe crisis response** is triggered (`therapy_utils.build_crisis_response()`).
+3. The frontend can alert the user and display emergency hotline numbers.
+
+This ensures that crisis handling does not depend on model behavior and remains fast and predictable.
+
+---
+
+## 4. How the Real-Time Loop Works
+
+1. **Listen** ? The user speaks in the frontend. The vision pipeline (client-side and/or server-side) tags the user?s current emotion (e.g. *Anxious*, *Neutral*, *Sad*).
+2. **Transmit** ? On end-of-utterance, the frontend sends a payload containing the **transcribed text** and (where used) the **emotion tag** to the FastAPI backend (REST today; WebSocket for future streaming).
+3. **Safety check** ? The backend runs the crisis detector. If high-risk, it returns the fixed crisis response and skips the LLM.
+4. **Process & retrieve** ? For non-crisis input, the backend can query a **RAG store** (e.g. ChromaDB) for relevant CBT/DBT techniques and builds a **structured system prompt** for Gemini (emotion, trajectory, contradiction, playbook).
+5. **Generate** ? Gemini produces a short, conversational reply (optionally streamed). If using ElevenLabs, text is piped to TTS and streamed as audio.
+6. **Playback** ? The frontend plays the response (browser TTS or queued Web AudioContext chunks) and shows the text as dynamic subtitles. Mic remains locked until playback finishes, preserving turn-taking.
+
+---
+
+## 5. Getting Started
+
+### Backend (`feelio-be`)
+
+```bash
+cd feelio-be
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate  # macOS/Linux
+pip install -r requirements.txt
+```
+
+Create a `.env` (see `.env.example`) with:
+
+- `GEMINI_API_KEY` ? Required for the LLM.
+
+Then:
+
+```bash
+uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+Endpoints:
+
+- `POST /vision` ? Body: `{ "image": "<base64 JPEG>" }`. Returns `{ "emotion": "neutral" | "happy" | "sad" | ... }`.
+- `POST /chat` ? Body: `{ "message": "user text" }`. Uses last detected emotion and returns `{ "reply": "...", "detected_emotion": "..." }`.
+
+### Frontend (`feelio-fe`)
+
+```bash
+cd feelio-fe
+npm install
+npm run dev
+```
+
+Open the URL shown (e.g. `http://localhost:5173`). The Session page uses `http://localhost:8000` for `/vision` and `/chat` by default; adjust in the frontend if your backend runs elsewhere.
+
+---
+
+## 6. Optional: RAG and WebSocket Roadmap
+
+- **RAG**: Add a ChromaDB (or similar) vector store in `feelio-be`, populated with therapeutic techniques. In the chat flow, retrieve relevant docs and inject them into the Gemini system prompt.
+- **WebSocket**: Replace or complement REST with a single WebSocket for streaming text and binary audio (e.g. ElevenLabs), and enforce walkie-talkie turn-taking in protocol and UI.
+- **Client-side vision**: Move emotion detection fully to the browser with MediaPipe Tasks Vision and send only **emotion tags** to the backend so video never leaves the device.
+
+---
+
+## 7. License & Disclaimer
+
+Feelio is for supportive, non-clinical use. It is not a substitute for professional mental health care. In crisis, users are directed to emergency and crisis resources via the safety guardrail and product copy.
+
+See **SECURITY.md** for security and reporting details.
